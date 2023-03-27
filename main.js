@@ -11,17 +11,22 @@ let openMultipleBrowsers = async (url, quantity) => {
   }));
 }
 
-let checkIfButtonIsActive = async (urlToSearch, selector, msInterval, quantity) => {
+let checkIfButtonIsActive = async (urlToSearch, selector, child, msInterval, quantity) => {
   const browser = await puppeteer.launch({headless: false});
   const page = await browser.newPage();
 
   await page.goto(urlToSearch);
 
   const interval = setInterval(async () => {
-    const href = await page.evaluate((selector) => {
-      const buttonLink = document.body.querySelector(selector).closest('a');
-      return buttonLink.href;
-    }, selector);
+    const href = await page.evaluate((selector, child) => {
+      const buttonsLinks = document.body.querySelectorAll(selector);
+
+      if (buttonsLinks.length >= child) {
+        return buttonsLinks[child - 1].closest('a').href;
+      }
+
+      return null;
+    }, selector, child);
 
     if (href != null && href != urlToSearch) {
       console.log("Button is available:", href);
@@ -54,6 +59,9 @@ let checkIfButtonIsActive = async (urlToSearch, selector, msInterval, quantity) 
   const selectorOptionIndex = arguments.indexOf('--selector') > -1 ? arguments.indexOf('--selector') : arguments.indexOf('-s');
   let selector = selectorOptionIndex > -1 ? arguments[selectorOptionIndex + 1] : null;
 
+  const childOptionIndex = arguments.indexOf('--child') > -1 ? arguments.indexOf('--child') : arguments.indexOf('-c');
+  let child = childOptionIndex > -1 ? arguments[childOptionIndex + 1] : null;
+
   if (!url) {
     console.log('URL is required');
   } else {
@@ -70,8 +78,12 @@ let checkIfButtonIsActive = async (urlToSearch, selector, msInterval, quantity) 
         if (!selector) {
           selector = "a img[alt=scotia]";
         }
+
+        if (!child) {
+          child = 1;
+        }
           
-        checkIfButtonIsActive(url, selector, parseInt(interval), parseInt(quantity));  
+        checkIfButtonIsActive(url, selector, parseInt(child), parseInt(interval), parseInt(quantity));  
         
         break;
     
